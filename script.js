@@ -374,6 +374,13 @@ function finalizarTest() {
     document.getElementById('txt-aciertos').textContent = aciertos;
     document.getElementById('txt-fallos').textContent = fallos;
     document.getElementById('txt-blancos').textContent = noContestadas;
+    const minutos = Math.floor(tiempoSegundos / 60).toString().padStart(2, '0');
+    const segundos = (tiempoSegundos % 60).toString().padStart(2, '0');
+    const elementoTiempo = document.getElementById('txt-tiempo-total');
+    if (elementoTiempo) {
+        elementoTiempo.textContent = `${minutos}:${segundos}`;
+    }
+        
 
     // ======================================================================
     // MAGIA DEL GRÁFICO CIRCULAR (conic-gradient dinámico)

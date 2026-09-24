@@ -271,6 +271,10 @@ h2, h3 {
     background: #f7fafc;
     font-weight: 500;
 }
+#txt-tiempo-total {
+  font-weight: bold;
+  color: #4f46e5; /* O el color morado de tu botón principal */
+}
 
 #txt-aciertos { color: var(--color-acierto); font-weight: 700; font-size: 1.1rem; }
 #txt-fallos { color: var(--color-fallo); font-weight: 700; font-size: 1.1rem; }
