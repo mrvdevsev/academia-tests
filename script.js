@@ -380,6 +380,8 @@ function finalizarTest() {
     if (elementoTiempo) {
         elementoTiempo.textContent = `${minutos}:${segundos}`;
     }
+    guardarEnHistorial(nota, `${minutos}:${segundos}`);
+    pintarHistorial();
         
 
     // ======================================================================
@@ -444,4 +446,52 @@ function barajarArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+// ==========================================
+// 14. HISTORIAL EN LOCALSTORAGE
+// ==========================================
+
+function guardarEnHistorial(nota, tiempoTexto) {
+  const modo = selectModo.value;
+  const tema = selectTema.value;
+  const tipoExamen = modo === 'tema' ? `Tema ${tema}` : 'Global';
+
+  const fecha = new Date().toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const nuevoRegistro = {
+    fecha: fecha,
+    tipo: tipoExamen,
+    nota: nota,
+    tiempo: tiempoTexto
+  };
+
+  const historial = JSON.parse(localStorage.getItem('historial_tests')) || [];
+  historial.unshift(nuevoRegistro);
+  localStorage.setItem('historial_tests', JSON.stringify(historial.slice(0, 10)));
+}
+
+function pintarHistorial() {
+  const tbody = document.getElementById('cuerpo-historial');
+  if (!tbody) return;
+
+  const historial = JSON.parse(localStorage.getItem('historial_tests')) || [];
+
+  if (historial.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color: #888;">Sin intentos registrados aún</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = historial.map(item => `
+    <tr>
+      <td>${item.fecha}</td>
+      <td>${item.tipo}</td>
+      <td><strong>${item.nota}</strong></td>
+      <td>${item.tiempo}</td>
+    </tr>
+  `).join('');
 }

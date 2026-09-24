@@ -275,6 +275,76 @@ h2, h3 {
   font-weight: bold;
   color: #4f46e5; /* O el color morado de tu botón principal */
 }
+.contenedor-historial {
+  margin-top: 25px;
+  width: 100%;
+}
+
+.contenedor-historial h3 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+#tabla-historial {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#tabla-historial th, 
+#tabla-historial td {
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#tabla-historial th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+}
+
+/* Contenedor principal responsive */
+.pantalla, #pantalla-resumen {
+  max-width: 520px;
+  width: 90%;
+  margin: 20px auto;
+  box-sizing: border-box;
+}
+
+/* Reducir márgenes verticales para que entre en una sola vista */
+.contenedor-historial {
+  margin-top: 15px;
+  width: 100%;
+}
+
+.contenedor-historial h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+/* Tabla responsive con scroll interno si hay más de 5 registros */
+#tabla-historial {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+#tabla-historial th, 
+#tabla-historial td {
+  padding: 6px 8px;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Envolver la tabla para que en móviles estrechos tenga scroll horizontal sin romper la tarjeta */
+.contenedor-historial {
+  overflow-x: auto;
+  max-height: 220px; /* Si se acumulan 10 intentos, añade scroll vertical propio */
+  overflow-y: auto;
+}
 
 #txt-aciertos { color: var(--color-acierto); font-weight: 700; font-size: 1.1rem; }
 #txt-fallos { color: var(--color-fallo); font-weight: 700; font-size: 1.1rem; }
