@@ -1,3 +1,8 @@
+// Configuración e inicialización de Supabase
+const SUPABASE_URL = "https://iqyctvwuucvjjypcnwsl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_rKJh1hfNVNfiLsiwWgGL_g_eMWWWJez";
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================================================
 // 1. CAPTURA DE ELEMENTOS DEL DOM (Identificar las piezas en el HTML)
 // ==========================================================================
@@ -62,44 +67,134 @@ let tiempoSegundos = 0; // Guardará el total de segundos transcurridos
 let idCronometro;       // Guardará el "mando a distancia" para poder parar el reloj
 const cronometroElemento = document.getElementById('cronometro'); // Capturamos el <span> del HTML
 
+// Cargar asignaturas activas desde Supabase
+async function cargarAsignaturas() {
+  const { data: asignaturas, error } = await supabaseClient
+    .from('asignaturas')
+    .select('id, nombre')
+    .eq('is_active', true);
+
+  if (error) {
+    console.error('Error al pedir asignaturas:', error);
+    selectAsignatura.innerHTML = '<option value="">Error al cargar datos</option>';
+    return;
+  }
+
+  selectAsignatura.innerHTML = '<option value="">-- Elige una asignatura --</option>';
+
+  asignaturas.forEach((asig) => {
+    const opcion = document.createElement('option');
+    opcion.value = asig.id;
+    opcion.textContent = asig.nombre;
+    selectAsignatura.appendChild(opcion);
+  });
+}
+
+// Ejecutamos la función al arrancar
+cargarAsignaturas();
+// Escuchar cuando el usuario cambia de asignatura para cargar sus temas
+selectAsignatura.addEventListener('change', async (e) => {
+  const asignaturaId = e.target.value;
+
+  // Si deselecciona o vuelve a la opción vacía
+  if (!asignaturaId) {
+    selectTema.innerHTML = '<option value="">Selecciona una asignatura primero</option>';
+    return;
+  }
+
+  selectTema.innerHTML = '<option value="">Cargando temas...</option>';
+
+  // Pedimos solo la columna "tema" de las preguntas de esa asignatura
+  const { data: preguntas, error } = await supabaseClient
+    .from('preguntas')
+    .select('tema')
+    .eq('asignatura_id', asignaturaId);
+
+  if (error) {
+    console.error('Error al cargar temas:', error);
+    selectTema.innerHTML = '<option value="">Error al cargar temas</option>';
+    return;
+  }
+
+  // Extraemos números únicos usando Set y los ordenamos (1, 2, 3...)
+  const temasUnicos = [...new Set(preguntas.map((p) => p.tema))].sort((a, b) => a - b);
+
+  selectTema.innerHTML = '<option value="">-- Selecciona un Tema --</option>';
+
+  temasUnicos.forEach((tema) => {
+    const opcion = document.createElement('option');
+    opcion.value = tema;
+    opcion.textContent = `Tema ${tema}`;
+    selectTema.appendChild(opcion);
+  });
+});
+
 // ==========================================================================
 // 6. EVENTO CLIC EN "COMENZAR TEST"
 // ==========================================================================
-btnComenzar.addEventListener('click', function() {
-    const asignaturaElegida = selectAsignatura.value;
-    const modoElegido = selectModo.value;
-    const temaElegido = selectTema.value;
+btnComenzar.addEventListener('click', async function() {
+  const asignaturaElegida = selectAsignatura.value;
+  const modoElegido = selectModo.value;
+  const temaElegido = selectTema.value;
 
-    // VALIDACIÓN BÁSICA: Obligar al usuario a elegir las opciones antes de pasar
-    if (asignaturaElegida === "" || modoElegido === "") {
-        alert("Por favor, selecciona una Asignatura y un Modo de Test.");
-        return; // Detiene el código aquí si falta algo
-    }
+  // 1. Validaciones
+  if (!asignaturaElegida) {
+    alert('Por favor, selecciona una asignatura.');
+    return;
+  }
+  if (!modoElegido) {
+    alert('Por favor, selecciona un modo de test.');
+    return;
+  }
+  if (modoElegido === 'tema' && !temaElegido) {
+    alert('Por favor, selecciona un tema.');
+    return;
+  }
 
-    if (modoElegido === "tema" && temaElegido === "") {
-        alert("Has elegido test por tema. Por favor, selecciona qué tema quieres repasar.");
-        return;
-    }
+  // 2. Feedback visual mientras descarga
+  btnComenzar.disabled = true;
+  btnComenzar.textContent = 'Cargando preguntas...';
 
-    // PASO 1: Filtrar las preguntas según lo que el usuario ha elegido
-    filtrarPreguntas(asignaturaElegida, modoElegido, temaElegido);
+  // 3. Preparar la consulta a Supabase
+  let consulta = supabaseClient
+    .from('preguntas')
+    .select('*')
+    .eq('asignatura_id', asignaturaElegida);
 
-    // PASO 2: Si por algún motivo la lista está vacía, avisamos
-    if (preguntasFiltradas.length === 0) {
-        alert("No se encontraron preguntas para esa combinación en el archivo JSON.");
-        return;
-    }
+  // Si eligió modo tema, añadimos el filtro correspondiente
+  if (modoElegido === 'tema') {
+    consulta = consulta.eq('tema', parseInt(temaElegido));
+  }
 
-    // PASO 3: Cambio de pantalla (Ocultamos el menú y mostramos el test)
-    pantallaConfig.classList.add('id-oculto'); 
-    pantallaTest.classList.remove('id-oculto'); 
+  const { data: preguntas, error } = await consulta;
 
-    // PASO 4: Resetear el índice a la primera pregunta (0) y pintarla
-    indicePreguntaActual = 0;
-    mostrarPreguntaEnPantalla();
-    iniciarCronometro(); // <-- Añade esta línea aquí al final
+  btnComenzar.disabled = false;
+  btnComenzar.textContent = 'Comenzar Test';
+
+  if (error || !preguntas || preguntas.length === 0) {
+    console.error('Error al cargar preguntas:', error);
+    alert('No se encontraron preguntas para la selección indicada.');
+    return;
+  }
+
+  // 4. Barajar las preguntas al azar
+  const barajadas = [...preguntas].sort(() => 0.5 - Math.random());
+
+  // 5. Cortar la cantidad según el modo (10 para tema, 40 para examen global)
+  const limite = modoElegido === 'tema' ? 10 : 40;
+  preguntasFiltradas = barajadas.slice(0, Math.min(limite, barajadas.length));
+
+  // 6. Resetear variables de control
+  indicePreguntaActual = 0;
+
+  // 7. Cambiar de pantalla
+  pantallaConfig.classList.add('id-oculto');
+  pantallaTest.classList.remove('id-oculto');
+
+  // 8. Pintar la primera pregunta
+  iniciarCronometro();
+  mostrarPreguntaEnPantalla();
 });
-
 
 // ==========================================================================
 // 7. FUNCIÓN PARA FILTRAR LAS PREGUNTAS
@@ -146,7 +241,7 @@ function mostrarPreguntaEnPantalla() {
     document.getElementById('progreso-preguntas').textContent = `Pregunta ${indicePreguntaActual + 1} de ${preguntasFiltradas.length}`;
 
     // Ponemos el enunciado real en el título
-    document.getElementById('enunciado').textContent = preguntaActual.Enunciado;
+    document.getElementById('enunciado').textContent = preguntaActual.enunciado;
 
     // Capturamos la caja de las opciones y la vaciamos
     const contenedorOpciones = document.getElementById('opciones');
@@ -154,10 +249,10 @@ function mostrarPreguntaEnPantalla() {
 
     // Creamos una lista de objetos. Cada opción lleva pegada la información de si es la buena o no.
     let opcionesEstructuradas = [
-        { texto: preguntaActual.Opcion_0, esCorrecta: preguntaActual.Correcta == 0 },
-        { texto: preguntaActual.Opcion_1, esCorrecta: preguntaActual.Correcta == 1 },
-        { texto: preguntaActual.Opcion_2, esCorrecta: preguntaActual.Correcta == 2 },
-        { texto: preguntaActual.Opcion_3, esCorrecta: preguntaActual.Correcta == 3 }
+        { texto: preguntaActual.opcion_0, esCorrecta: preguntaActual.correcta == 0 },
+        { texto: preguntaActual.opcion_1, esCorrecta: preguntaActual.correcta == 1 },
+        { texto: preguntaActual.opcion_2, esCorrecta: preguntaActual.correcta == 2 },
+        { texto: preguntaActual.opcion_3, esCorrecta: preguntaActual.correcta == 3 }
     ];
 
     opcionesEstructuradas = barajarArray(opcionesEstructuradas);
