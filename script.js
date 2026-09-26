@@ -71,9 +71,9 @@ const cronometroElemento = document.getElementById('cronometro'); // Capturamos 
 async function cargarAsignaturas() {
   const { data: asignaturas, error } = await supabaseClient
     .from('asignaturas')
-    .select('id, nombre')
-    .eq('is_active', true);
-
+    .select('*')
+    .eq('curso', 'DAW')
+    .order('nombre', { ascending: true });
   if (error) {
     console.error('Error al pedir asignaturas:', error);
     selectAsignatura.innerHTML = '<option value="">Error al cargar datos</option>';
