@@ -269,8 +269,7 @@ function mostrarPreguntaEnPantalla() {
         if (opcion.esCorrecta) {
             preguntaActual.NUEVO_indiceCorrecto = indiceOpcion;
         }
-        // ================================
-
+    
         // Le asignamos el evento clic a cada respuesta
         boton.addEventListener('click', function() {
             verificarRespuestaUsuario(indiceOpcion);
@@ -458,12 +457,14 @@ function guardarEnHistorial(nota, tiempoTexto) {
   const tema = selectTema.value;
   const tipoExamen = modo === 'tema' ? `Tema ${tema}` : 'Global';
 
-  const fecha = new Date().toLocaleDateString('es-ES', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const ahora = new Date();
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const anio = String(ahora.getFullYear()).slice(-2);
+  const hora = String(ahora.getHours()).padStart(2, '0');
+  const minuto = String(ahora.getMinutes()).padStart(2, '0');
+  
+  const fecha = `${dia}/${mes}/${anio}, ${hora}:${minuto}`;
 
   const nuevoRegistro = {
     fecha: fecha,
@@ -491,6 +492,62 @@ function pintarHistorial() {
   tbody.innerHTML = historial.map(item => `
     <tr>
       <td>${item.fecha}</td>
+      <td>${item.tipo}</td>
+      <td><strong>${item.nota}</strong></td>
+      <td>${item.tiempo}</td>
+    </tr>
+  `).join('');
+}
+// ==========================================
+// 15. HISTORIAL EN LOCALSTORAGE
+// ==========================================
+
+function guardarEnHistorial(nota, tiempoTexto) {
+  const modo = selectModo.value;
+  const tema = selectTema.value;
+  const tipoExamen = modo === 'tema' ? `Tema ${tema}` : 'Global';
+  
+  // NUEVO: Capturamos el texto (nombre) de la asignatura que esté seleccionada
+  const nombreAsignatura = selectAsignatura.options[selectAsignatura.selectedIndex].text;
+
+  const ahora = new Date();
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const anio = String(ahora.getFullYear()).slice(-2);
+  const hora = String(ahora.getHours()).padStart(2, '0');
+  const minuto = String(ahora.getMinutes()).padStart(2, '0');
+  
+  const fecha = `${dia}/${mes}/${anio}, ${hora}:${minuto}`;
+
+  const nuevoRegistro = {
+    fecha: fecha,
+    asignatura: nombreAsignatura, // Guardamos la asignatura
+    tipo: tipoExamen,
+    nota: nota,
+    tiempo: tiempoTexto
+  };
+
+  const historial = JSON.parse(localStorage.getItem('historial_tests')) || [];
+  historial.unshift(nuevoRegistro);
+  localStorage.setItem('historial_tests', JSON.stringify(historial.slice(0, 10)));
+}
+
+function pintarHistorial() {
+  const tbody = document.getElementById('cuerpo-historial');
+  if (!tbody) return;
+
+  const historial = JSON.parse(localStorage.getItem('historial_tests')) || [];
+
+  if (historial.length === 0) {
+    // Le decimos que ocupe 5 columnas (colspan="5") en vez de 4
+    tbody.innerHTML = '<tr><td colspan="5" style="color: #888;">Sin intentos registrados aún</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = historial.map(item => `
+    <tr>
+      <td>${item.fecha}</td>
+      <td>${item.asignatura || '---'}</td> <!-- Pintamos la asignatura (o unas rayitas si es un intento viejo) -->
       <td>${item.tipo}</td>
       <td><strong>${item.nota}</strong></td>
       <td>${item.tiempo}</td>
