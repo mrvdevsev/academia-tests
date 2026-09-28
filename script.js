@@ -108,7 +108,9 @@ selectAsignatura.addEventListener('change', async (e) => {
   const { data: preguntas, error } = await supabaseClient
     .from('preguntas')
     .select('tema')
-    .eq('asignatura_id', asignaturaId);
+    .eq('asignatura_id', parseInt(asignaturaId)); // <-- El parseInt vital
+
+  console.log("Respuesta de Supabase para los temas:", preguntas); // <-- El chivato
 
   if (error) {
     console.error('Error al cargar temas:', error);
@@ -159,7 +161,7 @@ btnComenzar.addEventListener('click', async function() {
   let consulta = supabaseClient
     .from('preguntas')
     .select('*')
-    .eq('asignatura_id', asignaturaElegida);
+    .eq('asignatura_id', parseInt(asignaturaElegida));
 
   // Si eligió modo tema, añadimos el filtro correspondiente
   if (modoElegido === 'tema') {
