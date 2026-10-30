@@ -37,21 +37,20 @@ async function cargarPreguntas(asignaturaId, temaSeleccionado) {
         let consulta = supabase
             .from('preguntas')
             .select('*')
-            .eq('asignatura_id', asignaturaId)
-            .eq('tema', temaSeleccionado);
+            .eq('asignatura_id', asignaturaId);
 
-        // Si NO es el tema 999 (el banco completo), limitamos a 10 preguntas
-        if (Number(temaSeleccionado) !== 999) {
-            consulta = consulta.limit(10);
-        }
-
+        // Si han seleccionado un tema específico y no es el 999
+        if (temaSeleccionado && Number(temaSeleccionado) !== 999) {
+            consulta = consulta.eq('tema', temaSeleccionado).limit(10);
+        } 
+        // Si es el tema 999 (o viene vacío para cargar todo), NO ponemos límite y nos traemos el banco entero
+        
         const { data, error } = await consulta;
 
         if (error) throw error;
 
-        // Guardamos las preguntas en tu variable global para usarlas en el test
         bancoPreguntasCompleto = data;
-        console.log("¡Datos cargados de Supabase con éxito! Preguntas encontradas:", bancoPreguntasCompleto.length);
+        console.log("¡Datos cargados con éxito! Preguntas encontradas:", bancoPreguntasCompleto.length);
 
     } catch (error) {
         console.error("Hubo un error al cargar las preguntas:", error);
