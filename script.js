@@ -30,22 +30,32 @@ selectModo.addEventListener('change', function() {
 let bancoPreguntasCompleto = []; // Aquí guardaremos TODAS las preguntas del JSON
 
 // ==========================================================================
-// 4. CARGAR LOS DATOS (Leer el archivo preguntas.json)
+// 4. CARGAR LOS DATOS DESDE SUPABASE
 // ==========================================================================
-function cargarPreguntas() {
-    fetch('preguntas.json')
-        .then(respuesta => {
-            // Convertimos el archivo de texto plano a un formato que JS entienda (Objeto)
-            return respuesta.json(); 
-        })
-        .then(datos => {
-            // Guardamos las preguntas en nuestra variable para usarlas cuando queramos
-            bancoPreguntasCompleto = datos;
-            console.log("¡Datos cargados con éxito! Preguntas encontradas:", bancoPreguntasCompleto.length);
-        })
-        .catch(error => {
-            console.error("Hubo un error al cargar las preguntas:", error);
-        });
+async function cargarPreguntas(asignaturaId, temaSeleccionado) {
+    try {
+        let consulta = supabase
+            .from('preguntas')
+            .select('*')
+            .eq('asignatura_id', asignaturaId)
+            .eq('tema', temaSeleccionado);
+
+        // Si NO es el tema 999 (el banco completo), limitamos a 10 preguntas
+        if (Number(temaSeleccionado) !== 999) {
+            consulta = consulta.limit(10);
+        }
+
+        const { data, error } = await consulta;
+
+        if (error) throw error;
+
+        // Guardamos las preguntas en tu variable global para usarlas en el test
+        bancoPreguntasCompleto = data;
+        console.log("¡Datos cargados de Supabase con éxito! Preguntas encontradas:", bancoPreguntasCompleto.length);
+
+    } catch (error) {
+        console.error("Hubo un error al cargar las preguntas:", error);
+    }
 }
 
 // Ejecutamos la función de carga nada más abrir la página
