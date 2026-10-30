@@ -191,8 +191,13 @@ btnComenzar.addEventListener('click', async function() {
   // 4. Barajar las preguntas al azar
   const barajadas = [...preguntas].sort(() => 0.5 - Math.random());
 
-  // 5. Cortar la cantidad según el modo (10 para tema, 40 para examen global)
-  const limite = modoElegido === 'tema' ? 10 : 40;
+  // 5. Cortar la cantidad según el modo o si es el banco completo (999)
+  let limite;
+  if (parseInt(temaElegido) === 999) {
+      limite = barajadas.length; // Coge todas las preguntas sin recortar
+  } else {
+      limite = modoElegido === 'tema' ? 10 : 40;
+  }
   preguntasFiltradas = barajadas.slice(0, Math.min(limite, barajadas.length));
 
   // 6. Resetear variables de control
